@@ -1,6 +1,6 @@
 ;;; color-dired.el --- Make dired color.
 
-;; Author: Hayashi Masahiro <mhayashi1120@gmail.com>
+;; Author: Masahiro Hayashi <mhayashi1120@gmail.com>
 ;; Keywords: dired color
 ;; URL: http://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
 ;; Emacs: GNU Emacs 22 or later
