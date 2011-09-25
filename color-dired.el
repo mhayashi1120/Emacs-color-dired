@@ -1,4 +1,4 @@
-;;; color-dired.el --- Make dired color.
+;;; color-dired.el --- Make colorize dired buffer by modified time.
 
 ;; Author: Masahiro Hayashi <mhayashi1120@gmail.com>
 ;; Keywords: dired color
