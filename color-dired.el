@@ -278,6 +278,24 @@ START-SECONDS means start time as float value.
 
 (font-lock-add-keywords 'dired-mode color-dired-search-keywords)
 
+(defun color-dired-modify-tramp-remote-environment (name &optional value)
+  (setq tramp-remote-process-environment
+        (loop with regexp = (format "^%s=" (regexp-quote name))
+              with done
+              with cell = (format "%s=%s" name value)
+              for v in tramp-remote-process-environment
+              if (string-match regexp v)
+              append (progn
+                       (setq done t)
+                       (and value (list cell)))
+              into res
+              else 
+              collect v into res
+              finally return 
+              (if (or done (null value))
+                  res
+                (cons cell res)))))
+
 (provide 'color-dired)
 
 ;;; color-dired.el ends here
