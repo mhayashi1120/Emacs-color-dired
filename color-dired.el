@@ -34,9 +34,9 @@
 ;;     (require 'color-dired)
 ;;
 ;; After that, file that is recently changed is emphasized in `dired' buffer.
-;; If you have changed date format in `dired', 
+;; If you have changed date format in `dired',
 ;; set `color-dired-date-format' like following.
-;; 
+;;
 ;;     (setq color-dired-date-format "%Y-%m-%d")
 
 ;;; History:
@@ -65,7 +65,7 @@
   :group 'dired
   :prefix "color-dired-")
 
-(defface color-dired-changed-today-default-face 
+(defface color-dired-changed-today-default-face
   '(
     (((class color)
       (background light))
@@ -76,7 +76,7 @@
   "Font lock mode face used to highlight changed in this day."
   :group 'color-dired)
 
-(defface color-dired-changed-this-week-default-face 
+(defface color-dired-changed-this-week-default-face
   '(
     (((class color)
       (background light))
@@ -87,7 +87,7 @@
   "Font lock mode face used to highlight changed in this week."
   :group 'color-dired)
 
-(defface color-dired-changed-last-week-default-face 
+(defface color-dired-changed-last-week-default-face
   '(
     (((class color)
       (background light))
@@ -109,25 +109,25 @@
   "Font lock mode face used to highlight changed in last week before."
   :group 'color-dired)
 
-(defcustom color-dired-changed-today-face 
+(defcustom color-dired-changed-today-face
   'color-dired-changed-today-default-face
   "Font lock mode face used to highlight changed in this day."
   :type 'face
   :group 'color-dired)
 
-(defcustom color-dired-changed-this-week-face 
+(defcustom color-dired-changed-this-week-face
   'color-dired-changed-this-week-default-face
   "Font lock mode face used to highlight changed in this week."
   :type 'face
   :group 'color-dired)
 
-(defcustom color-dired-changed-last-week-face 
+(defcustom color-dired-changed-last-week-face
   'color-dired-changed-last-week-default-face
   "Font lock mode face used to highlight changed in last week."
   :type 'face
   :group 'color-dired)
 
-(defcustom color-dired-changed-last-week-before-face 
+(defcustom color-dired-changed-last-week-before-face
   'color-dired-changed-last-week-before-default-face
   "Font lock mode face used to highlight changed in last week before."
   :type 'face
@@ -141,7 +141,7 @@
   (let (template date)
     (with-temp-buffer
       (insert-directory "~" "-la")
-      (setq template (member-if 
+      (setq template (member-if
 		      (lambda (x) (string-match "^d[[:ascii:]]+$" x))
 		      (split-string (buffer-string)))))
     (setq date (nth 5 template))
@@ -149,7 +149,7 @@
       ;; for windows.
       (require 'ls-lisp)
       (when (fboundp 'ls-lisp-format-time)
-	(let ((string (funcall 'ls-lisp-format-time 
+	(let ((string (funcall 'ls-lisp-format-time
 			       (file-attributes "~/") nil (current-time))))
 	  (setq date (car (split-string string))))))
     (cond
@@ -172,11 +172,11 @@
     (concat "\\(?:" (regexp-opt strings) "\\)")))
 
 (defcustom color-dired-date-format (color-dired-guessed-date-format)
-  "*Format of dired displaying. See `format-time-string'" 
+  "*Format of dired displaying. See `format-time-string'"
   :group 'color-dired
   :type 'string)
 
-(defcustom color-dired-time-regexp 
+(defcustom color-dired-time-regexp
   (concat
    " "
    (color-dired-regexp-opt
@@ -211,16 +211,16 @@
 	time result)
     (setq time start-seconds)
     (while (< i num)
-      (setq result 
+      (setq result
 	    (cons (seconds-to-time time) result))
       (setq time (+ step time))
       (setq i (1+ i)))
     (nreverse result)))
 
 (defun color-dired-diff-seconds (days)
-  (* 
+  (*
    ;; sec per day
-   24 60 60.0 
+   24 60 60.0
    ;; past day from last week sunday (except today)
    (+ (color-dired-week-number) days)))
 
@@ -237,10 +237,10 @@ START-SECONDS means start time as float value.
 		      (lambda (time)
 			(format-time-string color-dired-date-format time))
 		      times)))
-      (and 
-       day-list 
-       (concat " " 
-	       (color-dired-regexp-opt day-list) 
+      (and
+       day-list
+       (concat " "
+	       (color-dired-regexp-opt day-list)
 	       color-dired-time-regexp
 	       " ")))))
 
@@ -250,28 +250,28 @@ START-SECONDS means start time as float value.
    (color-dired-generate-regexp 1 (float-time)) bound t))
 
 (defun color-dired-this-week-search (bound)
-  (color-dired-set-week-regexp 
-   color-dired-this-week-regexp 
+  (color-dired-set-week-regexp
+   color-dired-this-week-regexp
    (color-dired-week-number)
-   (- (float-time) 
+   (- (float-time)
       (color-dired-diff-seconds 0)))
   (and color-dired-this-week-regexp
        (re-search-forward color-dired-this-week-regexp bound t)))
 
 (defun color-dired-last-week-search (bound)
-  (color-dired-set-week-regexp 
-   color-dired-last-week-regexp 
+  (color-dired-set-week-regexp
+   color-dired-last-week-regexp
    7
-   (- (float-time) 
+   (- (float-time)
       (color-dired-diff-seconds 7)))
   (and color-dired-last-week-regexp
        (re-search-forward color-dired-last-week-regexp bound t)))
 
 (defun color-dired-last-week-before-search (bound)
-  (color-dired-set-week-regexp 
-   color-dired-last-week-before-regexp 
+  (color-dired-set-week-regexp
+   color-dired-last-week-before-regexp
    7
-   (- (float-time) 
+   (- (float-time)
       (color-dired-diff-seconds 14)))
   (and color-dired-last-week-before-regexp
        (re-search-forward color-dired-last-week-before-regexp bound t)))
@@ -289,9 +289,9 @@ START-SECONDS means start time as float value.
                        (setq done t)
                        (and value (list cell)))
               into res
-              else 
+              else
               collect v into res
-              finally return 
+              finally return
               (if (or done (null value))
                   res
                 (cons cell res)))))
