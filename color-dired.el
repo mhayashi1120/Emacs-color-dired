@@ -4,7 +4,7 @@
 ;; Keywords: dired color
 ;; URL: http://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
 ;; Emacs: GNU Emacs 22 or later
-;; Version: 1.0.0
+;; Version: 1.2.0
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -65,7 +65,7 @@
   :group 'dired
   :prefix "color-dired-")
 
-(defface color-dired-changed-today-default-face
+(defface color-dired-changed-today-face
   '(
     (((class color)
       (background light))
@@ -76,7 +76,7 @@
   "Font lock mode face used to highlight changed in this day."
   :group 'color-dired)
 
-(defface color-dired-changed-this-week-default-face
+(defface color-dired-changed-this-week-face
   '(
     (((class color)
       (background light))
@@ -87,7 +87,7 @@
   "Font lock mode face used to highlight changed in this week."
   :group 'color-dired)
 
-(defface color-dired-changed-last-week-default-face
+(defface color-dired-changed-last-week-face
   '(
     (((class color)
       (background light))
@@ -98,7 +98,7 @@
   "Font lock mode face used to highlight changed in last week."
   :group 'color-dired)
 
-(defface color-dired-changed-last-week-before-default-face
+(defface color-dired-changed-last-week-before-face
   '(
     (((class color)
       (background light))
@@ -109,49 +109,25 @@
   "Font lock mode face used to highlight changed in last week before."
   :group 'color-dired)
 
-(defcustom color-dired-changed-today-face
-  'color-dired-changed-today-default-face
-  "Font lock mode face used to highlight changed in this day."
-  :type 'face
-  :group 'color-dired)
-
-(defcustom color-dired-changed-this-week-face
-  'color-dired-changed-this-week-default-face
-  "Font lock mode face used to highlight changed in this week."
-  :type 'face
-  :group 'color-dired)
-
-(defcustom color-dired-changed-last-week-face
-  'color-dired-changed-last-week-default-face
-  "Font lock mode face used to highlight changed in last week."
-  :type 'face
-  :group 'color-dired)
-
-(defcustom color-dired-changed-last-week-before-face
-  'color-dired-changed-last-week-before-default-face
-  "Font lock mode face used to highlight changed in last week before."
-  :type 'face
-  :group 'color-dired)
-
-(defvar color-dired-last-week-before-regexp nil)
-(defvar color-dired-last-week-regexp nil)
-(defvar color-dired-this-week-regexp nil)
-
 (defun color-dired-guessed-date-format ()
-  (let (template date)
-    (with-temp-buffer
-      (insert-directory "~" "-la")
-      (setq template (member-if
-		      (lambda (x) (string-match "^d[[:ascii:]]+$" x))
-		      (split-string (buffer-string)))))
-    (setq date (nth 5 template))
-    (unless date
+  (let (date)
+    (catch 'done
+      (with-temp-buffer
+        (insert-directory "~" "-la")
+        (dolist (x (split-string (buffer-string) "\n" t))
+          (when (string-match "^d.* [0-9]+ \\(.*?\\) [0-9]+:[0-9]+" x)
+            (setq date (match-string 1 x))
+            (throw 'done t))))
       ;; for windows.
       (require 'ls-lisp)
       (when (fboundp 'ls-lisp-format-time)
-	(let ((string (funcall 'ls-lisp-format-time
-			       (file-attributes "~/") nil (current-time))))
-	  (setq date (car (split-string string))))))
+        (let ((string (or (condition-case nil
+                              (funcall 'ls-lisp-format-time
+                                       (file-attributes "~/") nil (current-time))
+                            (error nil))
+                          (funcall 'ls-lisp-format-time
+                                   (file-attributes "~/") nil))))
+          (setq date (car (split-string string))))))
     (cond
      ((null date)
       "%b %e")
@@ -172,7 +148,7 @@
     (concat "\\(?:" (regexp-opt strings) "\\)")))
 
 (defcustom color-dired-date-format (color-dired-guessed-date-format)
-  "*Format of dired displaying. See `format-time-string'"
+  "Format of dired displaying time. See `format-time-string'"
   :group 'color-dired
   :type 'string)
 
@@ -185,54 +161,43 @@
      (mapcar (lambda (x) (format "%2d" x)) (number-sequence 0 23))
      (mapcar 'number-to-string (number-sequence 0 23))))
    ":[0-5][0-9]")
-  "*Time format append to `color-dired-date-format'"
+  "Regexp to match datetime"
   :group 'color-dired
   :type 'string)
 
 (defconst color-dired-search-keywords
-  '((color-dired-today-search . color-dired-changed-today-face)
-    (color-dired-this-week-search . color-dired-changed-this-week-face)
-    (color-dired-last-week-search . color-dired-changed-last-week-face)
-    (color-dired-last-week-before-search . color-dired-changed-last-week-before-face)))
+  '((color-dired--search-today . 'color-dired-changed-today-face)
+    (color-dired--search-this-week . 'color-dired-changed-this-week-face)
+    (color-dired--search-last-week . 'color-dired-changed-last-week-face)
+    (color-dired--search-last-week-before . 'color-dired-changed-last-week-before-face)))
 
-(defmacro color-dired-set-week-regexp (var num start-with)
-  `(when (or (null ,var)
-	     (null (get ',var 'day))
-	     ;; compare to current time
-	     (> (string-to-number (format-time-string "%Y%m%d"))
-		(get ',var 'day)))
-     (set ',var
-	  (color-dired-generate-regexp ,num ,start-with))
-     (put ',var 'day (string-to-number (format-time-string "%Y%m%d")))))
-
-(defun color-dired-time-sequence (num start-seconds)
+(defun color-dired--time-sequence (num start-seconds)
   (let ((step (* 24 60 60))
 	(i 0)
-	time result)
-    (setq time start-seconds)
+	(time start-seconds)
+        (res '()))
     (while (< i num)
-      (setq result
-	    (cons (seconds-to-time time) result))
+      (setq res
+	    (cons (seconds-to-time time) res))
       (setq time (+ step time))
       (setq i (1+ i)))
-    (nreverse result)))
+    (nreverse res)))
 
-(defun color-dired-diff-seconds (days)
+(defun color-dired--date-diff-seconds (days)
   (*
    ;; sec per day
    24 60 60.0
    ;; past day from last week sunday (except today)
-   (+ (color-dired-week-number) days)))
+   (+ (color-dired--week-number) days)))
 
-(defun color-dired-week-number ()
+(defun color-dired--week-number ()
   (string-to-number (format-time-string "%w")))
 
-(defun color-dired-generate-regexp (num start-seconds)
-  "return NUM of day regexp depend upon `color-dired-date-format'.
-START-SECONDS means start time as float value.
-"
+(defun color-dired--generate-regexp (num start-seconds)
+  "Return NUM of day regexp depend upon `color-dired-date-format'.
+START-SECONDS means start time as float value."
   (when color-dired-date-format
-    (let* ((times (color-dired-time-sequence num start-seconds))
+    (let* ((times (color-dired--time-sequence num start-seconds))
 	   (day-list (mapcar
 		      (lambda (time)
 			(format-time-string color-dired-date-format time))
@@ -244,41 +209,32 @@ START-SECONDS means start time as float value.
 	       color-dired-time-regexp
 	       " ")))))
 
-(defun color-dired-today-search (bound)
+(defun color-dired--search-today (bound)
   "font-lock search function for dired."
-  (re-search-forward
-   (color-dired-generate-regexp 1 (float-time)) bound t))
+  (let ((regexp (color-dired--generate-regexp 1 (float-time))))
+    (re-search-forward regexp bound t)))
 
-(defun color-dired-this-week-search (bound)
-  (color-dired-set-week-regexp
-   color-dired-this-week-regexp
-   (color-dired-week-number)
-   (- (float-time)
-      (color-dired-diff-seconds 0)))
-  (and color-dired-this-week-regexp
-       (re-search-forward color-dired-this-week-regexp bound t)))
+(defun color-dired--search-this-week (bound)
+  (let* ((start-with (- (float-time)
+                        (color-dired--date-diff-seconds 0)))
+         (regexp (color-dired--generate-regexp 0 start-with)))
+    (and regexp (re-search-forward regexp bound t))))
 
-(defun color-dired-last-week-search (bound)
-  (color-dired-set-week-regexp
-   color-dired-last-week-regexp
-   7
-   (- (float-time)
-      (color-dired-diff-seconds 7)))
-  (and color-dired-last-week-regexp
-       (re-search-forward color-dired-last-week-regexp bound t)))
+(defun color-dired--search-last-week (bound)
+  (let* ((start-with (- (float-time)
+                        (color-dired--date-diff-seconds 7)))
+         (regexp (color-dired--generate-regexp 7 start-with)))
+    (and regexp (re-search-forward regexp bound t))))
 
-(defun color-dired-last-week-before-search (bound)
-  (color-dired-set-week-regexp
-   color-dired-last-week-before-regexp
-   7
-   (- (float-time)
-      (color-dired-diff-seconds 14)))
-  (and color-dired-last-week-before-regexp
-       (re-search-forward color-dired-last-week-before-regexp bound t)))
+(defun color-dired--search-last-week-before (bound)
+  (let* ((start-with (- (float-time)
+                        (color-dired--date-diff-seconds 14)))
+         (regexp (color-dired--generate-regexp 7 start-with)))
+    (and regexp (re-search-forward regexp bound t))))
 
 (font-lock-add-keywords 'dired-mode color-dired-search-keywords)
 
-(defun color-dired-modify-tramp-remote-environment (name &optional value)
+(defun color-dired--modify-tramp-remote-environment (name &optional value)
   (setq tramp-remote-process-environment
         (loop with regexp = (format "^%s=" (regexp-quote name))
               with done
