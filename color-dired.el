@@ -2,7 +2,7 @@
 
 ;; Author: Masahiro Hayashi <mhayashi1120@gmail.com>
 ;; Keywords: dired color
-;; URL: http://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
+;; URL: https://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
 ;; Emacs: GNU Emacs 22 or later
 ;; Version: 1.2.0
 
