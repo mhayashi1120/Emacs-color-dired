@@ -4,7 +4,7 @@
 ;; Keywords: dired color
 ;; URL: https://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
 ;; Emacs: GNU Emacs 22 or later
-;; Version: 1.2.1
+;; Version: 1.2.2
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -134,11 +134,12 @@
       "%b %e"))))
 
 ;; `regexp-opt' is generating different regexp.
-(if (> emacs-major-version 22)
+(eval-and-compile
+  (if (> emacs-major-version 22)
+      (defun color-dired-regexp-opt (strings)
+        (regexp-opt strings))
     (defun color-dired-regexp-opt (strings)
-      (regexp-opt strings))
-  (defun color-dired-regexp-opt (strings)
-    (concat "\\(?:" (regexp-opt strings) "\\)")))
+      (concat "\\(?:" (regexp-opt strings) "\\)"))))
 
 (defcustom color-dired-date-format (color-dired-guessed-date-format "~/")
   "Default format of displaying time. See `format-time-string'
@@ -172,14 +173,15 @@ e.g.
                         'color-dired-general-time-regexp "1.2.0")
 
 (defvar color-dired-general-time-regexp
-  (concat
-   " "
-   (color-dired-regexp-opt
-    (append
-     (mapcar (lambda (x) (format "%02d" x)) (number-sequence 0 23))
-     (mapcar (lambda (x) (format "%2d" x)) (number-sequence 0 23))
-     (mapcar 'number-to-string (number-sequence 0 23))))
-   ":[0-5][0-9]")
+  (eval-when-compile
+    (concat
+     " "
+     (color-dired-regexp-opt
+      (append
+       (mapcar (lambda (x) (format "%02d" x)) (number-sequence 0 23))
+       (mapcar (lambda (x) (format "%2d" x)) (number-sequence 0 23))
+       (mapcar 'number-to-string (number-sequence 0 23))))
+     ":[0-5][0-9]"))
   "Regexp to match datetime")
 
 (defun color-dired--time-sequence (num start-seconds)
