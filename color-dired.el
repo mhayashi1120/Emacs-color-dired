@@ -4,7 +4,7 @@
 ;; Keywords: dired color
 ;; URL: https://github.com/mhayashi1120/Emacs-color-dired/raw/master/color-dired.el
 ;; Emacs: GNU Emacs 22 or later
-;; Version: 1.2.0
+;; Version: 1.2.1
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -23,10 +23,10 @@
 
 ;;; Commentary:
 
-;; color-dired provides colored text that recently changed. (`Today', `This week'
-;; ,`Last week' and `Last week before')
+;; color-dired provides colored text that recently changed. (`Today`, `This week`
+;; ,`Last week` and `Last week before`)
 
-;;; Install:
+;; ## Install:
 
 ;; Put this file into load-path'ed directory, and byte compile it if
 ;; desired. And put the following expression into your ~/.emacs.
@@ -34,15 +34,15 @@
 ;;     (require 'color-dired)
 ;;
 
+;; ## Usage:
+
+;;     M-x customize-group (color-dired)
+
 ;;; History:
 
 ;; This program is inspired from following url.
 ;; http://www.bookshelf.jp/soft/meadow_25.html#SEC288
 ;; http://homepage1.nifty.com/blankspace/emacs/dired.html
-
-;;; Usage:
-
-;;  M-x customize-group (color-dired)
 
 ;;; Code:
 
